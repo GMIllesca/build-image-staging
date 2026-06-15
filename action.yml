@@ -226,6 +226,13 @@ runs:
           exit 1
         fi
 
+    - name: Compute cache scope 🔑
+      id: cache-scope
+      shell: bash
+      run: |
+        PLATFORM_SAFE=$(echo "${{ inputs.platforms }}" | tr '/,' '--')
+        echo "prefix=${{ inputs.project-name }}-${PLATFORM_SAFE}" >> $GITHUB_OUTPUT
+
     - name: Build and run target 🐙
       uses: docker/build-push-action@v3
       with:
@@ -235,11 +242,11 @@ runs:
         file: ./${{ inputs.project-path }}/${{ inputs.docker-file }}
         target: ${{ inputs.image-target }}
         cache-from: |
-          type=gha,scope=${{ inputs.project-name }}-deps
-          type=gha,scope=${{ inputs.project-name }}-build
+          type=gha,scope=${{ steps.cache-scope.outputs.prefix }}-deps
+          type=gha,scope=${{ steps.cache-scope.outputs.prefix }}-build
         cache-to: |
-          type=gha,mode=max,scope=${{ inputs.project-name }}-deps
-          type=gha,mode=max,scope=${{ inputs.project-name }}-build
+          type=gha,mode=max,scope=${{ steps.cache-scope.outputs.prefix }}-deps
+          type=gha,mode=max,scope=${{ steps.cache-scope.outputs.prefix }}-build
         platforms: ${{ inputs.platforms != '' && inputs.platforms || 'linux/amd64' }}
         tags: |
           ${{ steps.prepare-tag.outputs.IMAGE_CURRENT }}
