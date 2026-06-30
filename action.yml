@@ -245,8 +245,8 @@ runs:
           type=gha,scope=${{ steps.cache-scope.outputs.prefix }}-deps
           type=gha,scope=${{ steps.cache-scope.outputs.prefix }}-build
         cache-to: |
-          type=gha,mode=max,scope=${{ steps.cache-scope.outputs.prefix }}-deps
-          type=gha,mode=max,scope=${{ steps.cache-scope.outputs.prefix }}-build
+          type=gha,mode=min,scope=${{ steps.cache-scope.outputs.prefix }}-deps
+          type=gha,mode=min,scope=${{ steps.cache-scope.outputs.prefix }}-build
         platforms: ${{ inputs.platforms != '' && inputs.platforms || 'linux/amd64' }}
         tags: |
           ${{ steps.prepare-tag.outputs.IMAGE_CURRENT }}
