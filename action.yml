@@ -234,7 +234,7 @@ runs:
         echo "prefix=${{ inputs.project-name }}-${PLATFORM_SAFE}" >> $GITHUB_OUTPUT
 
     - name: Build and run target 🐙
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: ./${{ inputs.project-path }}
         push: ${{ inputs.push-image }}
