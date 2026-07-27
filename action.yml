@@ -231,7 +231,18 @@ runs:
       shell: bash
       run: |
         PLATFORM_SAFE=$(echo "${{ inputs.platforms }}" | tr '/,' '--')
-        echo "prefix=${{ inputs.project-name }}-${PLATFORM_SAFE}" >> $GITHUB_OUTPUT
+        BASE_PREFIX="${{ inputs.project-name }}-${PLATFORM_SAFE}"
+
+        # Ref-specific segment so concurrent builds from different branches/PRs never write
+        # to the exact same gha cache key (that collision is what causes buildx's
+        # "failed to reserve cache" export errors). github.head_ref is only set for
+        # pull_request/pull_request_target events (the PR's own branch); everything else
+        # (push, workflow_dispatch, release, ...) falls back to github.ref_name.
+        REF_NAME="${{ github.head_ref || github.ref_name }}"
+        REF_SAFE=$(echo "${REF_NAME}" | tr -c 'a-zA-Z0-9' '-' | sed -E 's/-{2,}/-/g; s/^-|-$//g')
+
+        echo "base_prefix=${BASE_PREFIX}" >> $GITHUB_OUTPUT
+        echo "prefix=${BASE_PREFIX}-${REF_SAFE}" >> $GITHUB_OUTPUT
 
     - name: Build and run target 🐙
       uses: docker/build-push-action@v7
@@ -244,6 +255,8 @@ runs:
         cache-from: |
           type=gha,scope=${{ steps.cache-scope.outputs.prefix }}-deps
           type=gha,scope=${{ steps.cache-scope.outputs.prefix }}-build
+          type=gha,scope=${{ steps.cache-scope.outputs.base_prefix }}-deps
+          type=gha,scope=${{ steps.cache-scope.outputs.base_prefix }}-build
         cache-to: |
           type=gha,mode=min,scope=${{ steps.cache-scope.outputs.prefix }}-build
         platforms: ${{ inputs.platforms != '' && inputs.platforms || 'linux/amd64' }}
